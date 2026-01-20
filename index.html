@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBI Profile Assessment</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --header-bg: #e9ecef;
+            --border-color: #333;
+            --highlight-row: #f8f9fa;
+            --error-color: #ffe6e6;
+            --error-border: #dc3545;
+
+            /* NBI Colors */
+            --l1-blue: #def3fd;
+            --l1-blue-dark: #007bff;
+            --l2-green: #dff0d8;
+            --l2-green-dark: #28a745;
+            --r1-yellow: #fcf8e3;
+            --r1-yellow-dark: #ffc107;
+            --r2-red: #f2dede;
+            --r2-red-dark: #dc3545;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- Header Inputs --- */
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group input {
+            border: none;
+            border-bottom: 1px solid black;
+            padding: 5px;
+            outline: none;
+            font-family: 'Courier New', Courier, monospace;
+            background: transparent;
+            min-width: 200px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .input-group input.error-input {
+            border-bottom: 2px solid var(--error-border);
+            background-color: var(--error-color);
+        }
+
+        /* --- NBI RESULTS SECTION (Hidden until calculated) --- */
+        #nbi-results-container {
+            display: none;
+            /* Hidden by default */
+            margin-bottom: 30px;
+            border: 2px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        .nbi-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .nbi-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .nbi-desc {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* NBI Grid Layout */
+        .nbi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .brain-quadrant {
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .quad-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+
+        .quad-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .quad-score {
+            font-size: 2em;
+            font-weight: bold;
+            float: right;
+        }
+
+        .quad-desc {
+            font-size: 0.8em;
+            clear: both;
+            margin-top: 5px;
+        }
+
+        /* Quadrant Colors */
+        .q-blue {
+            background-color: var(--l1-blue);
+            color: var(--l1-blue-dark);
+            border-left: 5px solid var(--l1-blue-dark);
+        }
+
+        .q-green {
+            background-color: var(--l2-green);
+            color: var(--l2-green-dark);
+            border-left: 5px solid var(--l2-green-dark);
+        }
+
+        .q-yellow {
+            background-color: var(--r1-yellow);
+            color: #b78a02;
+            border-left: 5px solid var(--r1-yellow-dark);
+        }
+
+        .q-red {
+            background-color: var(--r2-red);
+            color: var(--r2-red-dark);
+            border-left: 5px solid var(--r2-red-dark);
+        }
+
+        .nbi-explanation {
+            font-size: 0.9em;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #666;
+            line-height: 1.4;
+        }
+
+        .dominant-badge {
+            background: #333;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            vertical-align: middle;
+            display: none;
+            /* Show dynamically */
+        }
+
+        /* --- Questionnaire Table --- */
+        .instructions {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid var(--border-color);
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: var(--header-bg);
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Column Widths */
+        th:nth-child(1) {
+            width: 30px;
+        }
+
+        th:nth-child(2) {
+            width: 25%;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--highlight-row);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        tr.error-row {
+            background-color: var(--error-color) !important;
+            border: 2px solid var(--error-border);
+        }
+
+        /* Radio Buttons */
+        label {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            cursor: pointer;
+            height: 100%;
+        }
+
+        input[type="radio"] {
+            margin-top: 3px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        /* Results Footer */
+        .results-section {
+            margin-top: 0;
+            border-top: 3px solid black;
+            background-color: #dde2e6 !important;
+            font-weight: bold;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .total-box {
+            font-size: 1.5em;
+            text-align: center;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #d32f2f;
+        }
+
+        /* Controls */
+        .controls {
+            margin-top: 30px;
+            text-align: center;
+            padding: 20px;
+            background: #eee;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 0 10px;
+            transition: opacity 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.calc-btn {
+            background-color: var(--primary-color);
+        }
+
+        button.reset-btn {
+            background-color: #dc3545;
+        }
+
+        button.print-btn {
+            background-color: #28a745;
+        }
+
+        /* Print Media Query */
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .container {
+                width: 100%;
+                max-width: none;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .controls {
+                display: none;
+            }
+
+            .input-group input {
+                border: none;
+                border-bottom: 1px solid black;
+            }
+
+            tr.error-row {
+                background-color: transparent !important;
+                border: 1px solid var(--border-color);
+            }
+
+            /* Force NBI section to show if calculated */
+            #nbi-results-container.visible-print {
+                display: block !important;
+                border: none;
+                padding: 0;
+            }
+
+            .nbi-grid {
+                gap: 15px;
+            }
+
+            .brain-quadrant {
+                border: 2px solid #ddd;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive {
+                overflow-x: auto;
+            }
+
+            .nbi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-info">
+            <div class="input-group">
+                <label>NAME:</label>
+                <input type="text" id="inpName" placeholder="Enter Name">
+            </div>
+            <div class="input-group">
+                <label>DEPARTMENT:</label>
+                <input type="text" id="inpDept" placeholder="Enter Dept">
+            </div>
+            <div class="input-group">
+                <label>DATE:</label>
+                <input type="date" id="inpDate">
+            </div>
+        </div>
+
+        <div id="nbi-results-container">
+            <div class="nbi-header">
+                <h2>NBI™ Brain Profile Summary</h2>
+                <div class="nbi-desc">Based on your calculated scores below</div>
+            </div>
+
+            <div class="nbi-grid">
+                <div class="brain-quadrant q-blue">
+                    <div class="quad-title">L1 Left Cerebral <span id="badge-A" class="dominant-badge">DOMINANT</span>
+                    </div>
+                    <div class="quad-name">REALIST / ANALYST</div>
+                    <div class="quad-score" id="score-disp-A">0</div>
+                    <div class="quad-desc">Factual, critical, rational, logical, objective, quantitative. "The Bottom
+                        Line."</div>
+                </div>
+
+                <div class="brain-quadrant q-yellow">
+                    <div class="quad-title">R1 Right Cerebral <span id="badge-C" class="dominant-badge">DOMINANT</span>
+                    </div>
+                    <div class="quad-name">STRATEGIST</div>
+                    <div class="quad-score" id="score-disp-C">0</div>
+                    <div class="quad-desc">Holistic, intuitive, integrating, synthesizing, visionary. "The Big Picture."
+                    </div>
+                </div>
+
+                <div class="brain-quadrant q-green">
+                    <div class="quad-title">L2 Left Limbic <span id="badge-B" class="dominant-badge">DOMINANT</span>
+                    </div>
+                    <div class="quad-name">PRESERVER / ORGANIZER</div>
+                    <div class="quad-score" id="score-disp-B">0</div>
+                    <div class="quad-desc">Sequential, organized, planned, detailed, structured. "The Details."</div>
+                </div>
+
+                <div class="brain-quadrant q-red">
+                    <div class="quad-title">R2 Right Limbic <span id="badge-D" class="dominant-badge">DOMINANT</span>
+                    </div>
+                    <div class="quad-name">SOCIALIZER / EMPATHIZER</div>
+                    <div class="quad-score" id="score-disp-D">0</div>
+                    <div class="quad-desc">Emotional, interpersonal, sensory, kinesthetic. "The People."</div>
+                </div>
+            </div>
+
+            <div class="nbi-explanation">
+                <strong>About Neethling Brain Instruments (NBI):</strong>
+                The NBI profile divides thinking preferences into four quadrants based on Left vs. Right brain
+                hemispheres and Cerebral (thinking) vs. Limbic (feeling) processing.
+                <strong>Left Brain</strong> modes (L1/L2) focus on logic, structure, and detail.
+                <strong>Right Brain</strong> modes (R1/R2) focus on intuition, people, and the big picture.
+                Your scores below indicate your thinking preferences, not your ability. High scores represent your
+                "comfort zone."
+            </div>
+        </div>
+
+        <div class="instructions">
+            Instructions: Please read the "SITUATION" given and choose only one profile. Put a tick in the relevant box.
+        </div>
+
+        <div class="table-responsive">
+            <form id="assessmentForm">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>SITUATION</th>
+                            <th>Profile A<br><small>(Blue / L1)</small></th>
+                            <th>Profile B<br><small>(Green / L2)</small></th>
+                            <th>Profile C<br><small>(Yellow / R1)</small></th>
+                            <th>Profile D<br><small>(Red / R2)</small></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="row1">
+                            <td align="center">1</td>
+                            <td>I learn best:</td>
+                            <td><label><input type="radio" name="q1" value="A"> by looking at key points &
+                                    summaries</label></td>
+                            <td><label><input type="radio" name="q1" value="B"> by looking at chronological & well
+                                    planned lessons with clear instructions & objectives</label></td>
+                            <td><label><input type="radio" name="q1" value="C"> through fun, new & experimental methods
+                                    of teaching</label></td>
+                            <td><label><input type="radio" name="q1" value="D"> when I connect with the teacher</label>
+                            </td>
+                        </tr>
+                        <tr id="row2">
+                            <td align="center">2</td>
+                            <td>When problem solving I prefer to:</td>
+                            <td><label><input type="radio" name="q2" value="A"> analyse the facts first</label></td>
+                            <td><label><input type="radio" name="q2" value="B"> arrange and organize facts first</label>
+                            </td>
+                            <td><label><input type="radio" name="q2" value="C"> solve problems using "gut feeling"
+                                    first</label></td>
+                            <td><label><input type="radio" name="q2" value="D"> look at how it impacts people
+                                    first</label></td>
+                        </tr>
+                        <tr id="row3">
+                            <td align="center">3</td>
+                            <td>In meetings, I prefer to be:</td>
+                            <td><label><input type="radio" name="q3" value="A"> logical</label></td>
+                            <td><label><input type="radio" name="q3" value="B"> detailed</label></td>
+                            <td><label><input type="radio" name="q3" value="C"> imaginative</label></td>
+                            <td><label><input type="radio" name="q3" value="D"> people-focused</label></td>
+                        </tr>
+                        <tr id="row4">
+                            <td align="center">4</td>
+                            <td>I prefer to:</td>
+                            <td><label><input type="radio" name="q4" value="A"> gather all information</label></td>
+                            <td><label><input type="radio" name="q4" value="B"> seek details & elaborations</label></td>
+                            <td><label><input type="radio" name="q4" value="C"> look at new ideas and stimulating
+                                    suggestions</label></td>
+                            <td><label><input type="radio" name="q4" value="D"> share ideas</label></td>
+                        </tr>
+                        <tr id="row5">
+                            <td align="center">5</td>
+                            <td>As a parent, I prefer to:</td>
+                            <td><label><input type="radio" name="q5" value="A"> reach a decision quickly after factual
+                                    analysis</label></td>
+                            <td><label><input type="radio" name="q5" value="B"> validate through careful
+                                    planning</label></td>
+                            <td><label><input type="radio" name="q5" value="C"> test & push limits</label></td>
+                            <td><label><input type="radio" name="q5" value="D"> gather feedback & get buy-in from
+                                    others</label></td>
+                        </tr>
+                        <tr id="row6">
+                            <td align="center">6</td>
+                            <td>I keep tab on:</td>
+                            <td><label><input type="radio" name="q6" value="A"> insist my child focuses on the task at
+                                    hand</label></td>
+                            <td><label><input type="radio" name="q6" value="B"> be safety conscious to ensure that my
+                                    child is protected</label></td>
+                            <td><label><input type="radio" name="q6" value="C"> encourage my child to "try out"
+                                    something new</label></td>
+                            <td><label><input type="radio" name="q6" value="D"> encourage group activities & want my
+                                    child to be a "joiner"</label></td>
+                        </tr>
+                        <tr id="row7">
+                            <td align="center">7</td>
+                            <td>When playing, I prefer to:</td>
+                            <td><label><input type="radio" name="q7" value="A"> performance & monitor and assess
+                                    results</label></td>
+                            <td><label><input type="radio" name="q7" value="B"> ensuring others follow procedures, rules
+                                    and regulations</label></td>
+                            <td><label><input type="radio" name="q7" value="C"> the future positioning of a
+                                    project</label></td>
+                            <td><label><input type="radio" name="q7" value="D"> reaching out to others in
+                                    decision-making</label></td>
+                        </tr>
+                        <tr id="row8">
+                            <td align="center">8</td>
+                            <td>The biggest complaint about myself is that I:</td>
+                            <td><label><input type="radio" name="q8" value="A"> apply correct skills &
+                                    techniques</label></td>
+                            <td><label><input type="radio" name="q8" value="B"> ensure consistency of
+                                    performance</label></td>
+                            <td><label><input type="radio" name="q8" value="C"> handle the game in a unique way</label>
+                            </td>
+                            <td><label><input type="radio" name="q8" value="D"> enjoy the people "dynamics" & energy
+                                    level</label></td>
+                        </tr>
+                        <tr id="row9">
+                            <td align="center">9</td>
+                            <td>The biggest complaint about myself is that I:</td>
+                            <td><label><input type="radio" name="q9" value="A"> am critical</label></td>
+                            <td><label><input type="radio" name="q9" value="B"> am predictable</label></td>
+                            <td><label><input type="radio" name="q9" value="C"> am not practical or grounded</label>
+                            </td>
+                            <td><label><input type="radio" name="q9" value="D"> hold grudges</label></td>
+                        </tr>
+                        <tr id="row10">
+                            <td align="center">10</td>
+                            <td>I prefer:</td>
+                            <td><label><input type="radio" name="q10" value="A"> anything with focus, preciseness &
+                                    exactness</label></td>
+                            <td><label><input type="radio" name="q10" value="B"> tried & tested methods</label></td>
+                            <td><label><input type="radio" name="q10" value="C"> new ideas</label></td>
+                            <td><label><input type="radio" name="q10" value="D"> to bring new insights into
+                                    ideas</label></td>
+                        </tr>
+                        <tr id="row11">
+                            <td align="center">11</td>
+                            <td>The question I often ask is:</td>
+                            <td><label><input type="radio" name="q11" value="A"> What?</label></td>
+                            <td><label><input type="radio" name="q11" value="B"> How?</label></td>
+                            <td><label><input type="radio" name="q11" value="C"> Why?</label></td>
+                            <td><label><input type="radio" name="q11" value="D"> Who?</label></td>
+                        </tr>
+                        <tr id="row12">
+                            <td align="center">12</td>
+                            <td>When looking at an issue, I prefer to:</td>
+                            <td><label><input type="radio" name="q12" value="A"> see facts clearly (with no
+                                    emotions)</label></td>
+                            <td><label><input type="radio" name="q12" value="B"> deal with facts chronologically</label>
+                            </td>
+                            <td><label><input type="radio" name="q12" value="C"> visualise the facts</label></td>
+                            <td><label><input type="radio" name="q12" value="D"> have an intuitive feel for people
+                                    involved</label></td>
+                        </tr>
+                        <tr id="row13">
+                            <td align="center">13</td>
+                            <td>I prefer to:</td>
+                            <td><label><input type="radio" name="q13" value="A"> research based on facts &
+                                    analysis</label></td>
+                            <td><label><input type="radio" name="q13" value="B"> evaluate all angles</label></td>
+                            <td><label><input type="radio" name="q13" value="C"> apply intuition & take risks</label>
+                            </td>
+                            <td><label><input type="radio" name="q13" value="D"> be socially considerate</label></td>
+                        </tr>
+                        <tr id="row14">
+                            <td align="center">14</td>
+                            <td>For me, the following act is the most important:</td>
+                            <td><label><input type="radio" name="q14" value="A"> enforcing decision</label></td>
+                            <td><label><input type="radio" name="q14" value="B"> timely & effective
+                                    implementation</label></td>
+                            <td><label><input type="radio" name="q14" value="C"> taking risk to fulfill business
+                                    outcome</label></td>
+                            <td><label><input type="radio" name="q14" value="D"> understanding group behaviour &
+                                    utilizing feedback</label></td>
+                        </tr>
+                        <tr id="row15">
+                            <td align="center">15</td>
+                            <td>I prefer to:</td>
+                            <td><label><input type="radio" name="q15" value="A"> summarise and analyse</label></td>
+                            <td><label><input type="radio" name="q15" value="B"> categorise & make checklist</label>
+                            </td>
+                            <td><label><input type="radio" name="q15" value="C"> mind map & visualize</label></td>
+                            <td><label><input type="radio" name="q15" value="D"> verbalise & discuss with others</label>
+                            </td>
+                        </tr>
+                        <tr id="row16">
+                            <td align="center">16</td>
+                            <td>You prefer to place importance on the:</td>
+                            <td><label><input type="radio" name="q16" value="A"> outcome</label></td>
+                            <td><label><input type="radio" name="q16" value="B"> task</label></td>
+                            <td><label><input type="radio" name="q16" value="C"> creative process</label></td>
+                            <td><label><input type="radio" name="q16" value="D"> person/people</label></td>
+                        </tr>
+                        <tr id="row17">
+                            <td align="center">17</td>
+                            <td>I get:</td>
+                            <td><label><input type="radio" name="q17" value="A"> irritated with too many unnecessary
+                                    details that distracts me from achieving outcome</label></td>
+                            <td><label><input type="radio" name="q17" value="B"> upset by unplanned meetings, events &
+                                    sudden request</label></td>
+                            <td><label><input type="radio" name="q17" value="C"> bored easily</label></td>
+                            <td><label><input type="radio" name="q17" value="D"> emotional when people & their concerns
+                                    are not properly handled</label></td>
+                        </tr>
+                        <tr id="row18">
+                            <td align="center">18</td>
+                            <td>In your relationship, I prefer:</td>
+                            <td><label><input type="radio" name="q18" value="A"> being clear on what is "right" &
+                                    "wrong" in a relationship</label></td>
+                            <td><label><input type="radio" name="q18" value="B"> stable, long lasting
+                                    relationship</label></td>
+                            <td><label><input type="radio" name="q18" value="C"> to surprise your partner & like to be
+                                    surprised by your partner</label></td>
+                            <td><label><input type="radio" name="q18" value="D"> not to hide your affection or
+                                    love</label></td>
+                        </tr>
+                        <tr id="row19">
+                            <td align="center">19</td>
+                            <td>I prefer to:</td>
+                            <td><label><input type="radio" name="q19" value="A"> stand firm on issues & have the last
+                                    say</label></td>
+                            <td><label><input type="radio" name="q19" value="B"> work with experienced & highly skilled
+                                    employees</label></td>
+                            <td><label><input type="radio" name="q19" value="C"> support new ideas & encourage
+                                    alternative ways of doing things</label></td>
+                            <td><label><input type="radio" name="q19" value="D"> communicate with team & reach
+                                    consensus</label></td>
+                        </tr>
+                        <tr id="row20">
+                            <td align="center">20</td>
+                            <td>Which one of these phrases best describes you?</td>
+                            <td><label><input type="radio" name="q20" value="A"> "Do it my way"</label></td>
+                            <td><label><input type="radio" name="q20" value="B"> "Always Look before You Leap"</label>
+                            </td>
+                            <td><label><input type="radio" name="q20" value="C"> "No Risk! No Gain!"</label></td>
+                            <td><label><input type="radio" name="q20" value="D"> "Values, Feelings & People"</label>
+                            </td>
+                        </tr>
+
+                        <tr class="results-section">
+                            <td colspan="2" align="right" style="vertical-align: middle; font-size: 1.2em;">TOTAL</td>
+                            <td>
+                                <div id="totalA" class="total-box">-</div>
+                            </td>
+                            <td>
+                                <div id="totalB" class="total-box">-</div>
+                            </td>
+                            <td>
+                                <div id="totalC" class="total-box">-</div>
+                            </td>
+                            <td>
+                                <div id="totalD" class="total-box">-</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"></td>
+                            <td align="center"><strong>Profile A</strong></td>
+                            <td align="center"><strong>Profile B</strong></td>
+                            <td align="center"><strong>Profile C</strong></td>
+                            <td align="center"><strong>Profile D</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+
+        <div class="controls">
+            <button type="button" class="calc-btn" onclick="calculateScores(true)">Calculate & View Profile</button>
+            <button type="button" class="print-btn" onclick="validateAndPrint()">Print to PDF</button>
+            <button type="button" class="reset-btn" onclick="resetForm()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        function calculateScores(showResults = false) {
+            let scores = { A: 0, B: 0, C: 0, D: 0 };
+
+            // 1. Calculate Scores
+            for (let i = 1; i <= 20; i++) {
+                const radios = document.getElementsByName('q' + i);
+                for (const radio of radios) {
+                    if (radio.checked) {
+                        scores[radio.value]++;
+                        break;
+                    }
+                }
+            }
+
+            // 2. Update Table Totals
+            document.getElementById('totalA').textContent = scores.A;
+            document.getElementById('totalB').textContent = scores.B;
+            document.getElementById('totalC').textContent = scores.C;
+            document.getElementById('totalD').textContent = scores.D;
+
+            // 3. Update NBI Dashboard
+            document.getElementById('score-disp-A').textContent = scores.A;
+            document.getElementById('score-disp-B').textContent = scores.B;
+            document.getElementById('score-disp-C').textContent = scores.C;
+            document.getElementById('score-disp-D').textContent = scores.D;
+
+            // 4. Determine Dominant Profile(s)
+            const maxScore = Math.max(scores.A, scores.B, scores.C, scores.D);
+
+            // Hide all badges first
+            document.getElementById('badge-A').style.display = 'none';
+            document.getElementById('badge-B').style.display = 'none';
+            document.getElementById('badge-C').style.display = 'none';
+            document.getElementById('badge-D').style.display = 'none';
+
+            if (maxScore > 0) {
+                if (scores.A === maxScore) document.getElementById('badge-A').style.display = 'inline-block';
+                if (scores.B === maxScore) document.getElementById('badge-B').style.display = 'inline-block';
+                if (scores.C === maxScore) document.getElementById('badge-C').style.display = 'inline-block';
+                if (scores.D === maxScore) document.getElementById('badge-D').style.display = 'inline-block';
+            }
+
+            // 5. Show Results Section if requested
+            if (showResults) {
+                const resultDiv = document.getElementById('nbi-results-container');
+                resultDiv.style.display = 'block';
+                resultDiv.classList.add('visible-print');
+                resultDiv.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+
+        function clearErrors() {
+            document.getElementById('inpName').classList.remove('error-input');
+            document.getElementById('inpDept').classList.remove('error-input');
+            document.getElementById('inpDate').classList.remove('error-input');
+            for (let i = 1; i <= 20; i++) {
+                document.getElementById('row' + i).classList.remove('error-row');
+            }
+        }
+
+        function validateAndPrint() {
+            calculateScores(true); // Ensure dashboard is updated and visible
+            clearErrors();
+
+            let isValid = true;
+            let firstErrorElement = null;
+
+            const name = document.getElementById('inpName');
+            const dept = document.getElementById('inpDept');
+            const date = document.getElementById('inpDate');
+
+            if (!name.value.trim()) { isValid = false; name.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = name; }
+            if (!dept.value.trim()) { isValid = false; dept.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = dept; }
+            if (!date.value) { isValid = false; date.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = date; }
+
+            for (let i = 1; i <= 20; i++) {
+                const radios = document.getElementsByName('q' + i);
+                let rowChecked = false;
+                for (const radio of radios) { if (radio.checked) { rowChecked = true; break; } }
+                if (!rowChecked) {
+                    isValid = false;
+                    const row = document.getElementById('row' + i);
+                    row.classList.add('error-row');
+                    if (!firstErrorElement) firstErrorElement = row;
+                }
+            }
+
+            if (isValid) {
+                window.print();
+            } else {
+                alert('Please fill out all highlighted fields before printing.');
+                if (firstErrorElement) firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+
+        function resetForm() {
+            if (confirm("Clear entire form?")) {
+                document.getElementById('assessmentForm').reset();
+                document.getElementById('inpName').value = "";
+                document.getElementById('inpDept').value = "";
+                document.getElementById('inpDate').value = "";
+                document.getElementById('nbi-results-container').style.display = 'none';
+                document.getElementById('nbi-results-container').classList.remove('visible-print');
+                calculateScores(false); // Reset totals to 0
+                clearErrors();
+            }
+        }
+
+        // Auto-calc on change (does not auto-show results box)
+        document.getElementById('assessmentForm').addEventListener('change', () => calculateScores(false));
+    </script>
+
+</body>
+
+</html>
