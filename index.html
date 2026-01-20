@@ -4,12 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brain Profile Assessment</title>
-    <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <meta property="og:image" content="og-image.svg">
-    <meta property="og:image:type" content="image/svg+xml">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
+    <title>Profile Assessment (Shareable)</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -89,6 +84,7 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
+            pointer-events: none;
         }
 
         .toast {
@@ -104,6 +100,7 @@
             opacity: 0;
             transition: opacity 0.3s, transform 0.3s;
             transform: translateY(20px);
+            pointer-events: auto;
         }
 
         .toast.show {
@@ -117,6 +114,10 @@
 
         .toast.success {
             background-color: #2e7d32;
+        }
+
+        .toast.info {
+            background-color: #007bff;
         }
 
 
@@ -314,7 +315,6 @@
             bottom: 0;
             border-top: 1px solid #ccc;
             z-index: 100;
-            /* Ensure controls stay above table content */
         }
 
         button {
@@ -345,6 +345,10 @@
             background-color: #28a745;
         }
 
+        button.share-btn {
+            background-color: #17a2b8;
+        }
+
         /* --- MOBILE QUIZ MODE (Screens < 768px) --- */
         @media (max-width: 768px) {
             body {
@@ -368,7 +372,6 @@
                 grid-template-columns: 1fr;
             }
 
-            /* Transform Table to Quiz Cards */
             table,
             thead,
             tbody,
@@ -383,8 +386,6 @@
                 display: none;
             }
 
-            /* Hide Headers for Blind Quiz Mode */
-
             tr {
                 margin-bottom: 20px;
                 border: 1px solid #ddd;
@@ -394,7 +395,6 @@
                 overflow: hidden;
             }
 
-            /* Question Number */
             td:nth-of-type(1) {
                 background-color: var(--primary-color);
                 color: white;
@@ -407,7 +407,6 @@
                 margin-bottom: 5px;
             }
 
-            /* Situation Text */
             td:nth-of-type(2) {
                 font-size: 1.2em;
                 font-weight: 600;
@@ -416,7 +415,6 @@
                 color: #000;
             }
 
-            /* Options Stack - BLIND (No labels) */
             td:nth-of-type(3),
             td:nth-of-type(4),
             td:nth-of-type(5),
@@ -427,12 +425,10 @@
                 background: #fff;
             }
 
-            /* Results Row on Mobile */
             .results-section {
                 display: none;
             }
 
-            /* Hide the bottom labels row */
             tr:last-child {
                 display: none;
             }
@@ -463,7 +459,6 @@
                 display: none !important;
             }
 
-            /* RESET DISPLAY PROPERTIES TO TABLE */
             table {
                 display: table !important;
                 border: 2px solid #000 !important;
@@ -493,7 +488,6 @@
                 padding: 6px !important;
             }
 
-            /* Reset Specific Mobile Styles */
             td:nth-of-type(1) {
                 background: transparent !important;
                 color: black !important;
@@ -506,7 +500,6 @@
                 padding: 8px !important;
             }
 
-            /* Show Results Row */
             .results-section {
                 display: table-row !important;
                 background-color: #ddd !important;
@@ -517,7 +510,6 @@
                 display: table-row !important;
             }
 
-            /* NBI Dashboard Print Styling */
             #nbi-results-container.visible-print {
                 display: block !important;
                 border: none;
@@ -862,7 +854,8 @@
         </div>
 
         <div class="controls">
-            <button type="button" class="calc-btn" onclick="validateAndCalculate()">Calculate & View Profile</button>
+            <button type="button" class="calc-btn" onclick="validateAndCalculate()">Calculate & View</button>
+            <button type="button" class="share-btn" onclick="validateAndShare()">Share Results</button>
             <button type="button" class="print-btn" onclick="validateAndPrint()">Print to PDF</button>
             <button type="button" class="reset-btn" onclick="resetForm()">Reset</button>
         </div>
@@ -872,35 +865,21 @@
         // --- Toast Logic ---
         function showToast(message, type = 'error') {
             const container = document.getElementById('toast-container');
-
-            // Create toast element
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
-
             container.appendChild(toast);
-
-            // Trigger reflow to enable transition
-            void toast.offsetWidth;
-
-            // Show
+            void toast.offsetWidth; // Trigger reflow
             toast.classList.add('show');
-
-            // Remove after 3 seconds
             setTimeout(() => {
                 toast.classList.remove('show');
-                setTimeout(() => {
-                    if (container.contains(toast)) {
-                        container.removeChild(toast);
-                    }
-                }, 300);
+                setTimeout(() => { if (container.contains(toast)) container.removeChild(toast); }, 300);
             }, 3000);
         }
 
-        // --- Core Logic ---
+        // --- Core Calculation Logic ---
         function calculateScores(showResults = false) {
             let scores = { A: 0, B: 0, C: 0, D: 0 };
-
             for (let i = 1; i <= 20; i++) {
                 const radios = document.getElementsByName('q' + i);
                 for (const radio of radios) {
@@ -910,26 +889,21 @@
                     }
                 }
             }
-
-            // Update Table Totals
+            // Update Totals
             document.getElementById('totalA').textContent = scores.A;
             document.getElementById('totalB').textContent = scores.B;
             document.getElementById('totalC').textContent = scores.C;
             document.getElementById('totalD').textContent = scores.D;
 
-            // Update NBI Dashboard
+            // Update Dashboard
             document.getElementById('score-disp-A').textContent = scores.A;
             document.getElementById('score-disp-B').textContent = scores.B;
             document.getElementById('score-disp-C').textContent = scores.C;
             document.getElementById('score-disp-D').textContent = scores.D;
 
-            // Dominant Profile Logic
+            // Dominant Profile Badge
             const maxScore = Math.max(scores.A, scores.B, scores.C, scores.D);
-            document.getElementById('badge-A').style.display = 'none';
-            document.getElementById('badge-B').style.display = 'none';
-            document.getElementById('badge-C').style.display = 'none';
-            document.getElementById('badge-D').style.display = 'none';
-
+            ['A', 'B', 'C', 'D'].forEach(p => document.getElementById(`badge-${p}`).style.display = 'none');
             if (maxScore > 0) {
                 if (scores.A === maxScore) document.getElementById('badge-A').style.display = 'inline-block';
                 if (scores.B === maxScore) document.getElementById('badge-B').style.display = 'inline-block';
@@ -954,34 +928,20 @@
             }
         }
 
-        // --- Shared Validation Logic ---
+        // --- Validation Logic ---
         function validateForm() {
             clearErrors();
             let isValid = true;
             let firstErrorElement = null;
 
-            // 1. Check Headers
             const name = document.getElementById('inpName');
             const dept = document.getElementById('inpDept');
             const date = document.getElementById('inpDate');
 
-            if (!name.value.trim()) {
-                isValid = false;
-                name.classList.add('error-input');
-                if (!firstErrorElement) firstErrorElement = name;
-            }
-            if (!dept.value.trim()) {
-                isValid = false;
-                dept.classList.add('error-input');
-                if (!firstErrorElement) firstErrorElement = dept;
-            }
-            if (!date.value) {
-                isValid = false;
-                date.classList.add('error-input');
-                if (!firstErrorElement) firstErrorElement = date;
-            }
+            if (!name.value.trim()) { isValid = false; name.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = name; }
+            if (!dept.value.trim()) { isValid = false; dept.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = dept; }
+            if (!date.value) { isValid = false; date.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = date; }
 
-            // 2. Check All 20 Questions
             for (let i = 1; i <= 20; i++) {
                 const radios = document.getElementsByName('q' + i);
                 let rowChecked = false;
@@ -993,12 +953,42 @@
                     if (!firstErrorElement) firstErrorElement = row;
                 }
             }
-
             return { isValid, firstErrorElement };
         }
 
-        // --- Button Handlers ---
+        // --- Share Logic ---
+        function validateAndShare() {
+            const result = validateForm();
+            if (!result.isValid) {
+                showToast("Please complete all highlighted fields before sharing.", "error");
+                if (result.firstErrorElement) result.firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+            }
 
+            // Gather Data
+            const params = new URLSearchParams();
+            params.set('name', document.getElementById('inpName').value);
+            params.set('dept', document.getElementById('inpDept').value);
+            params.set('date', document.getElementById('inpDate').value);
+
+            for (let i = 1; i <= 20; i++) {
+                const val = document.querySelector(`input[name="q${i}"]:checked`).value;
+                params.set(`q${i}`, val);
+            }
+
+            // Construct URL
+            const shareUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?${params.toString()}`;
+
+            // Copy to Clipboard
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast("Result Link copied to clipboard!", "success");
+            }).catch(err => {
+                showToast("Failed to copy link.", "error");
+                console.error('Copy failed', err);
+            });
+        }
+
+        // --- Button Handlers ---
         function validateAndCalculate() {
             const result = validateForm();
             if (result.isValid) {
@@ -1006,9 +996,7 @@
                 showToast("Profile calculated successfully!", "success");
             } else {
                 showToast("Please complete all highlighted fields.", "error");
-                if (result.firstErrorElement) {
-                    result.firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                }
+                if (result.firstErrorElement) result.firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
             }
         }
 
@@ -1016,13 +1004,10 @@
             const result = validateForm();
             if (result.isValid) {
                 calculateScores(true);
-                // Small delay to ensure styles apply before print dialog opens
                 setTimeout(() => window.print(), 100);
             } else {
                 showToast("Please fill all fields before printing.", "error");
-                if (result.firstErrorElement) {
-                    result.firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                }
+                if (result.firstErrorElement) result.firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
             }
         }
 
@@ -1036,12 +1021,45 @@
                 document.getElementById('nbi-results-container').classList.remove('visible-print');
                 calculateScores(false);
                 clearErrors();
+                // Clear URL params without reload
+                window.history.pushState({}, document.title, window.location.pathname);
                 showToast("Form cleared.", "success");
             }
         }
 
-        // Auto-calc internal scores on change (does not auto-show results box)
-        document.getElementById('assessmentForm').addEventListener('change', () => calculateScores(false));
+        // --- On Load: Parse URL ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+
+            // Basic check: Ensure name and at least q1 are present to attempt population
+            if (params.has('name') && params.has('q1')) {
+                try {
+                    document.getElementById('inpName').value = params.get('name') || '';
+                    document.getElementById('inpDept').value = params.get('dept') || '';
+                    document.getElementById('inpDate').value = params.get('date') || '';
+
+                    for (let i = 1; i <= 20; i++) {
+                        const val = params.get(`q${i}`);
+                        if (val) {
+                            const radio = document.querySelector(`input[name="q${i}"][value="${val}"]`);
+                            if (radio) radio.checked = true;
+                        }
+                    }
+
+                    // If fully valid, calculate immediately
+                    const result = validateForm();
+                    if (result.isValid) {
+                        calculateScores(true);
+                        showToast("Shared results loaded successfully.", "info");
+                    }
+                } catch (e) {
+                    console.error("Error parsing URL params", e);
+                }
+            }
+
+            // Auto-calc internal scores on change
+            document.getElementById('assessmentForm').addEventListener('change', () => calculateScores(false));
+        });
     </script>
 
 </body>
