@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile Assessment (Shareable)</title>
+    <title>Brain Profile Assessment</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -14,12 +14,12 @@
             --error-color: #ffe6e6;
             --error-border: #dc3545;
 
-            /* NBI Colors (Only used for Results) */
+            /* NBI Colors */
             --l1-blue: #def3fd;
             --l1-blue-dark: #007bff;
             --l2-green: #dff0d8;
             --l2-green-dark: #28a745;
-            --r1-yellow: #fcf8e3;
+            s --r1-yellow: #fcf8e3;
             --r1-yellow-dark: #ffc107;
             --r2-red: #f2dede;
             --r2-red-dark: #dc3545;
@@ -83,7 +83,7 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
+            z-index: 2000;
             pointer-events: none;
         }
 
@@ -120,8 +120,97 @@
             background-color: #007bff;
         }
 
+        /* --- SHARE MODAL (New) --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
 
-        /* --- NBI RESULTS SECTION (Hidden until calculated) --- */
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .modal-desc {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .share-link-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .share-link-box input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: monospace;
+            background: #f8f9fa;
+        }
+
+        .share-link-box button {
+            margin: 0;
+            background-color: var(--primary-color);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+        }
+
+        .close-modal:hover {
+            color: #333;
+            opacity: 1;
+        }
+
+        /* --- NBI RESULTS SECTION --- */
         #nbi-results-container {
             display: none;
             margin-bottom: 30px;
@@ -188,7 +277,6 @@
             margin-top: 5px;
         }
 
-        /* Quadrant Colors (Only for Results) */
         .q-blue {
             background-color: var(--l1-blue);
             color: var(--l1-blue-dark);
@@ -434,7 +522,7 @@
             }
         }
 
-        /* --- PRINT PDF OVERRIDE (Forces Table Layout) --- */
+        /* --- PRINT PDF OVERRIDE --- */
         @media print {
             body {
                 background: white;
@@ -451,11 +539,9 @@
                 border: none;
             }
 
-            .controls {
-                display: none !important;
-            }
-
-            #toast-container {
+            .controls,
+            #toast-container,
+            .modal-overlay {
                 display: none !important;
             }
 
@@ -533,6 +619,20 @@
 <body>
 
     <div id="toast-container"></div>
+
+    <div id="shareModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeShareModal()">&times;</button>
+            <div class="modal-title">Share Your Results</div>
+            <div class="modal-desc">
+                Please share this link with your team leaders and other team members so they can view your profile.
+            </div>
+            <div class="share-link-box">
+                <input type="text" id="shareInput" readonly>
+                <button onclick="copyFromModal()">Copy</button>
+            </div>
+        </div>
+    </div>
 
     <div class="container">
         <div class="header-info">
@@ -869,12 +969,39 @@
             toast.className = `toast ${type}`;
             toast.textContent = message;
             container.appendChild(toast);
-            void toast.offsetWidth; // Trigger reflow
+            void toast.offsetWidth;
             toast.classList.add('show');
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => { if (container.contains(toast)) container.removeChild(toast); }, 300);
             }, 3000);
+        }
+
+        // --- Modal Logic ---
+        function openShareModal(url) {
+            document.getElementById('shareInput').value = url;
+            document.getElementById('shareModal').style.display = 'flex';
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').style.display = 'none';
+        }
+
+        function copyFromModal() {
+            const copyText = document.getElementById("shareInput");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                showToast("Copied to clipboard!", "success");
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('shareModal');
+            if (event.target == modal) {
+                closeShareModal();
+            }
         }
 
         // --- Core Calculation Logic ---
@@ -956,7 +1083,7 @@
             return { isValid, firstErrorElement };
         }
 
-        // --- Share Logic ---
+        // --- Share Logic (Compressed) ---
         function validateAndShare() {
             const result = validateForm();
             if (!result.isValid) {
@@ -965,30 +1092,75 @@
                 return;
             }
 
-            // Gather Data
-            const params = new URLSearchParams();
-            params.set('name', document.getElementById('inpName').value);
-            params.set('dept', document.getElementById('inpDept').value);
-            params.set('date', document.getElementById('inpDate').value);
-
+            // Compact Data Structure for "Hash"
+            let answerString = "";
             for (let i = 1; i <= 20; i++) {
-                const val = document.querySelector(`input[name="q${i}"]:checked`).value;
-                params.set(`q${i}`, val);
+                answerString += document.querySelector(`input[name="q${i}"]:checked`).value;
             }
 
-            // Construct URL
-            const shareUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?${params.toString()}`;
+            const dataObj = {
+                n: document.getElementById('inpName').value,
+                d: document.getElementById('inpDept').value,
+                t: document.getElementById('inpDate').value,
+                a: answerString // Compact string "ABCD..."
+            };
 
-            // Copy to Clipboard
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                showToast("Result Link copied to clipboard!", "success");
-            }).catch(err => {
-                showToast("Failed to copy link.", "error");
-                console.error('Copy failed', err);
-            });
+            // Create "Hash" (Base64 Encoded JSON)
+            try {
+                const jsonStr = JSON.stringify(dataObj);
+                const hash = btoa(jsonStr); // Encode
+
+                const shareUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?data=${hash}`;
+                openShareModal(shareUrl);
+            } catch (e) {
+                console.error(e);
+                showToast("Error generating link", "error");
+            }
         }
 
-        // --- Button Handlers ---
+        // --- On Load: Parse "Hash" ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.has('data')) {
+                try {
+                    // Decode Hash
+                    const hash = params.get('data');
+                    const jsonStr = atob(hash);
+                    const data = JSON.parse(jsonStr);
+
+                    // Populate Fields
+                    document.getElementById('inpName').value = data.n || '';
+                    document.getElementById('inpDept').value = data.d || '';
+                    document.getElementById('inpDate').value = data.t || '';
+
+                    // Populate Answers from compact string
+                    if (data.a && data.a.length === 20) {
+                        for (let i = 0; i < 20; i++) {
+                            const qNum = i + 1;
+                            const val = data.a[i]; // char at index
+                            const radio = document.querySelector(`input[name="q${qNum}"][value="${val}"]`);
+                            if (radio) radio.checked = true;
+                        }
+                    }
+
+                    // Calculate
+                    calculateScores(true);
+                    showToast("Shared results loaded successfully.", "info");
+
+                    // Clean URL
+                    window.history.pushState({}, document.title, window.location.pathname);
+
+                } catch (e) {
+                    console.error("Error parsing data param", e);
+                    showToast("Invalid or corrupted share link.", "error");
+                }
+            }
+
+            document.getElementById('assessmentForm').addEventListener('change', () => calculateScores(false));
+        });
+
+        // --- Other Buttons ---
         function validateAndCalculate() {
             const result = validateForm();
             if (result.isValid) {
@@ -1012,7 +1184,7 @@
         }
 
         function resetForm() {
-            if (confirm("Are you sure you want to clear the entire form?")) {
+            if (confirm("Clear entire form?")) {
                 document.getElementById('assessmentForm').reset();
                 document.getElementById('inpName').value = "";
                 document.getElementById('inpDept').value = "";
@@ -1021,45 +1193,9 @@
                 document.getElementById('nbi-results-container').classList.remove('visible-print');
                 calculateScores(false);
                 clearErrors();
-                // Clear URL params without reload
-                window.history.pushState({}, document.title, window.location.pathname);
                 showToast("Form cleared.", "success");
             }
         }
-
-        // --- On Load: Parse URL ---
-        window.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-
-            // Basic check: Ensure name and at least q1 are present to attempt population
-            if (params.has('name') && params.has('q1')) {
-                try {
-                    document.getElementById('inpName').value = params.get('name') || '';
-                    document.getElementById('inpDept').value = params.get('dept') || '';
-                    document.getElementById('inpDate').value = params.get('date') || '';
-
-                    for (let i = 1; i <= 20; i++) {
-                        const val = params.get(`q${i}`);
-                        if (val) {
-                            const radio = document.querySelector(`input[name="q${i}"][value="${val}"]`);
-                            if (radio) radio.checked = true;
-                        }
-                    }
-
-                    // If fully valid, calculate immediately
-                    const result = validateForm();
-                    if (result.isValid) {
-                        calculateScores(true);
-                        showToast("Shared results loaded successfully.", "info");
-                    }
-                } catch (e) {
-                    console.error("Error parsing URL params", e);
-                }
-            }
-
-            // Auto-calc internal scores on change
-            document.getElementById('assessmentForm').addEventListener('change', () => calculateScores(false));
-        });
     </script>
 
 </body>
