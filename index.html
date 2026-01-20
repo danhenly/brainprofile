@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBI Profile Assessment</title>
+    <title>Brain Profile Assessment</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -14,7 +14,7 @@
             --error-color: #ffe6e6;
             --error-border: #dc3545;
 
-            /* NBI Colors */
+            /* NBI Colors (Only used for Results) */
             --l1-blue: #def3fd;
             --l1-blue-dark: #007bff;
             --l2-green: #dff0d8;
@@ -27,7 +27,8 @@
 
         body {
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 20px;
             background-color: #f4f4f4;
             font-size: 14px;
             color: #333;
@@ -39,6 +40,7 @@
             background: white;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
 
         /* --- Header Inputs --- */
@@ -75,10 +77,47 @@
             background-color: var(--error-color);
         }
 
+        /* --- TOAST NOTIFICATION --- */
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        .toast {
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            font-size: 15px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(20px);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background-color: #d32f2f;
+        }
+
+        .toast.success {
+            background-color: #2e7d32;
+        }
+
+
         /* --- NBI RESULTS SECTION (Hidden until calculated) --- */
         #nbi-results-container {
             display: none;
-            /* Hidden by default */
             margin-bottom: 30px;
             border: 2px solid #ccc;
             padding: 15px;
@@ -103,7 +142,6 @@
             font-style: italic;
         }
 
-        /* NBI Grid Layout */
         .nbi-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -144,7 +182,7 @@
             margin-top: 5px;
         }
 
-        /* Quadrant Colors */
+        /* Quadrant Colors (Only for Results) */
         .q-blue {
             background-color: var(--l1-blue);
             color: var(--l1-blue-dark);
@@ -186,16 +224,15 @@
             font-size: 0.7em;
             vertical-align: middle;
             display: none;
-            /* Show dynamically */
         }
 
-        /* --- Questionnaire Table --- */
         .instructions {
             font-style: italic;
             margin-bottom: 15px;
             color: #555;
         }
 
+        /* --- TABLE / QUIZ STYLING --- */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -214,11 +251,9 @@
             font-weight: bold;
             text-align: center;
             vertical-align: middle;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
         }
 
-        /* Column Widths */
+        /* Desktop Column Widths */
         th:nth-child(1) {
             width: 30px;
         }
@@ -229,8 +264,6 @@
 
         tr:nth-child(even) {
             background-color: var(--highlight-row);
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
         }
 
         tr.error-row {
@@ -238,7 +271,6 @@
             border: 2px solid var(--error-border);
         }
 
-        /* Radio Buttons */
         label {
             display: flex;
             align-items: flex-start;
@@ -253,14 +285,9 @@
             cursor: pointer;
         }
 
-        /* Results Footer */
         .results-section {
-            margin-top: 0;
-            border-top: 3px solid black;
             background-color: #dde2e6 !important;
             font-weight: bold;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
         }
 
         .total-box {
@@ -271,13 +298,18 @@
             color: #d32f2f;
         }
 
-        /* Controls */
+        /* --- CONTROLS --- */
         .controls {
             margin-top: 30px;
             text-align: center;
             padding: 20px;
             background: #eee;
             border-radius: 8px;
+            position: sticky;
+            bottom: 0;
+            border-top: 1px solid #ccc;
+            z-index: 100;
+            /* Ensure controls stay above table content */
         }
 
         button {
@@ -287,7 +319,7 @@
             border: none;
             cursor: pointer;
             border-radius: 4px;
-            margin: 0 10px;
+            margin: 5px;
             transition: opacity 0.2s;
             font-weight: bold;
         }
@@ -308,12 +340,105 @@
             background-color: #28a745;
         }
 
-        /* Print Media Query */
+        /* --- MOBILE QUIZ MODE (Screens < 768px) --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .header-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .input-group input {
+                width: 100%;
+            }
+
+            .nbi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Transform Table to Quiz Cards */
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: auto;
+            }
+
+            thead {
+                display: none;
+            }
+
+            /* Hide Headers for Blind Quiz Mode */
+
+            tr {
+                margin-bottom: 20px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                background: white;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+            }
+
+            /* Question Number */
+            td:nth-of-type(1) {
+                background-color: var(--primary-color);
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 5px 15px;
+                font-size: 0.9em;
+                display: inline-block;
+                border-bottom-right-radius: 8px;
+                margin-bottom: 5px;
+            }
+
+            /* Situation Text */
+            td:nth-of-type(2) {
+                font-size: 1.2em;
+                font-weight: 600;
+                border: none;
+                padding: 10px 15px 15px 15px;
+                color: #000;
+            }
+
+            /* Options Stack - BLIND (No labels) */
+            td:nth-of-type(3),
+            td:nth-of-type(4),
+            td:nth-of-type(5),
+            td:nth-of-type(6) {
+                border: none;
+                border-top: 1px solid #eee;
+                padding: 12px 15px;
+                background: #fff;
+            }
+
+            /* Results Row on Mobile */
+            .results-section {
+                display: none;
+            }
+
+            /* Hide the bottom labels row */
+            tr:last-child {
+                display: none;
+            }
+        }
+
+        /* --- PRINT PDF OVERRIDE (Forces Table Layout) --- */
         @media print {
             body {
                 background: white;
+                padding: 0;
                 margin: 0;
-                -webkit-print-color-adjust: exact;
             }
 
             .container {
@@ -322,23 +447,72 @@
                 box-shadow: none;
                 padding: 0;
                 margin: 0;
+                border: none;
             }
 
             .controls {
-                display: none;
+                display: none !important;
             }
 
-            .input-group input {
-                border: none;
-                border-bottom: 1px solid black;
+            #toast-container {
+                display: none !important;
             }
 
-            tr.error-row {
-                background-color: transparent !important;
-                border: 1px solid var(--border-color);
+            /* RESET DISPLAY PROPERTIES TO TABLE */
+            table {
+                display: table !important;
+                border: 2px solid #000 !important;
             }
 
-            /* Force NBI section to show if calculated */
+            thead {
+                display: table-header-group !important;
+            }
+
+            tbody {
+                display: table-row-group !important;
+            }
+
+            tr {
+                display: table-row !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                border: none !important;
+            }
+
+            td,
+            th {
+                display: table-cell !important;
+                width: auto !important;
+                border: 1px solid #000 !important;
+                padding: 6px !important;
+            }
+
+            /* Reset Specific Mobile Styles */
+            td:nth-of-type(1) {
+                background: transparent !important;
+                color: black !important;
+                font-weight: normal !important;
+            }
+
+            td:nth-of-type(2) {
+                font-size: inherit !important;
+                font-weight: normal !important;
+                padding: 8px !important;
+            }
+
+            /* Show Results Row */
+            .results-section {
+                display: table-row !important;
+                background-color: #ddd !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            tr:last-child {
+                display: table-row !important;
+            }
+
+            /* NBI Dashboard Print Styling */
             #nbi-results-container.visible-print {
                 display: block !important;
                 border: none;
@@ -346,27 +520,22 @@
             }
 
             .nbi-grid {
-                gap: 15px;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 10px !important;
             }
 
             .brain-quadrant {
-                border: 2px solid #ddd;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .table-responsive {
-                overflow-x: auto;
-            }
-
-            .nbi-grid {
-                grid-template-columns: 1fr;
+                break-inside: avoid;
+                border: 1px solid #ccc;
             }
         }
     </style>
 </head>
 
 <body>
+
+    <div id="toast-container"></div>
 
     <div class="container">
         <div class="header-info">
@@ -394,10 +563,9 @@
                 <div class="brain-quadrant q-blue">
                     <div class="quad-title">L1 Left Cerebral <span id="badge-A" class="dominant-badge">DOMINANT</span>
                     </div>
-                    <div class="quad-name">REALIST / ANALYST</div>
+                    <div class="quad-name">REALIST</div>
                     <div class="quad-score" id="score-disp-A">0</div>
-                    <div class="quad-desc">Factual, critical, rational, logical, objective, quantitative. "The Bottom
-                        Line."</div>
+                    <div class="quad-desc">Factual, critical, rational, logical. "The Bottom Line."</div>
                 </div>
 
                 <div class="brain-quadrant q-yellow">
@@ -405,40 +573,36 @@
                     </div>
                     <div class="quad-name">STRATEGIST</div>
                     <div class="quad-score" id="score-disp-C">0</div>
-                    <div class="quad-desc">Holistic, intuitive, integrating, synthesizing, visionary. "The Big Picture."
-                    </div>
+                    <div class="quad-desc">Holistic, intuitive, integrating, visionary. "The Big Picture."</div>
                 </div>
 
                 <div class="brain-quadrant q-green">
                     <div class="quad-title">L2 Left Limbic <span id="badge-B" class="dominant-badge">DOMINANT</span>
                     </div>
-                    <div class="quad-name">PRESERVER / ORGANIZER</div>
+                    <div class="quad-name">PRESERVER</div>
                     <div class="quad-score" id="score-disp-B">0</div>
-                    <div class="quad-desc">Sequential, organized, planned, detailed, structured. "The Details."</div>
+                    <div class="quad-desc">Sequential, organized, planned, detailed. "The Details."</div>
                 </div>
 
                 <div class="brain-quadrant q-red">
                     <div class="quad-title">R2 Right Limbic <span id="badge-D" class="dominant-badge">DOMINANT</span>
                     </div>
-                    <div class="quad-name">SOCIALIZER / EMPATHIZER</div>
+                    <div class="quad-name">SOCIALIZER</div>
                     <div class="quad-score" id="score-disp-D">0</div>
-                    <div class="quad-desc">Emotional, interpersonal, sensory, kinesthetic. "The People."</div>
+                    <div class="quad-desc">Emotional, interpersonal, sensory. "The People."</div>
                 </div>
             </div>
 
             <div class="nbi-explanation">
                 <strong>About Neethling Brain Instruments (NBI):</strong>
-                The NBI profile divides thinking preferences into four quadrants based on Left vs. Right brain
-                hemispheres and Cerebral (thinking) vs. Limbic (feeling) processing.
-                <strong>Left Brain</strong> modes (L1/L2) focus on logic, structure, and detail.
-                <strong>Right Brain</strong> modes (R1/R2) focus on intuition, people, and the big picture.
-                Your scores below indicate your thinking preferences, not your ability. High scores represent your
-                "comfort zone."
+                The NBI profile divides thinking preferences into four quadrants. Left Brain (L1/L2) focuses on logic
+                and structure. Right Brain (R1/R2) focuses on intuition and people. High scores represent your "comfort
+                zone."
             </div>
         </div>
 
         <div class="instructions">
-            Instructions: Please read the "SITUATION" given and choose only one profile. Put a tick in the relevant box.
+            Instructions: Please read the "SITUATION" given and choose only one profile.
         </div>
 
         <div class="table-responsive">
@@ -448,10 +612,10 @@
                         <tr>
                             <th>No.</th>
                             <th>SITUATION</th>
-                            <th>Profile A<br><small>(Blue / L1)</small></th>
-                            <th>Profile B<br><small>(Green / L2)</small></th>
-                            <th>Profile C<br><small>(Yellow / R1)</small></th>
-                            <th>Profile D<br><small>(Red / R2)</small></th>
+                            <th>Option A</th>
+                            <th>Option B</th>
+                            <th>Option C</th>
+                            <th>Option D</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -682,10 +846,10 @@
                         </tr>
                         <tr>
                             <td colspan="2"></td>
-                            <td align="center"><strong>Profile A</strong></td>
-                            <td align="center"><strong>Profile B</strong></td>
-                            <td align="center"><strong>Profile C</strong></td>
-                            <td align="center"><strong>Profile D</strong></td>
+                            <td align="center"><strong>Option A</strong></td>
+                            <td align="center"><strong>Option B</strong></td>
+                            <td align="center"><strong>Option C</strong></td>
+                            <td align="center"><strong>Option D</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -693,17 +857,45 @@
         </div>
 
         <div class="controls">
-            <button type="button" class="calc-btn" onclick="calculateScores(true)">Calculate & View Profile</button>
+            <button type="button" class="calc-btn" onclick="validateAndCalculate()">Calculate & View Profile</button>
             <button type="button" class="print-btn" onclick="validateAndPrint()">Print to PDF</button>
             <button type="button" class="reset-btn" onclick="resetForm()">Reset</button>
         </div>
     </div>
 
     <script>
+        // --- Toast Logic ---
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            // Trigger reflow to enable transition
+            void toast.offsetWidth;
+
+            // Show
+            toast.classList.add('show');
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // --- Core Logic ---
         function calculateScores(showResults = false) {
             let scores = { A: 0, B: 0, C: 0, D: 0 };
 
-            // 1. Calculate Scores
             for (let i = 1; i <= 20; i++) {
                 const radios = document.getElementsByName('q' + i);
                 for (const radio of radios) {
@@ -714,22 +906,20 @@
                 }
             }
 
-            // 2. Update Table Totals
+            // Update Table Totals
             document.getElementById('totalA').textContent = scores.A;
             document.getElementById('totalB').textContent = scores.B;
             document.getElementById('totalC').textContent = scores.C;
             document.getElementById('totalD').textContent = scores.D;
 
-            // 3. Update NBI Dashboard
+            // Update NBI Dashboard
             document.getElementById('score-disp-A').textContent = scores.A;
             document.getElementById('score-disp-B').textContent = scores.B;
             document.getElementById('score-disp-C').textContent = scores.C;
             document.getElementById('score-disp-D').textContent = scores.D;
 
-            // 4. Determine Dominant Profile(s)
+            // Dominant Profile Logic
             const maxScore = Math.max(scores.A, scores.B, scores.C, scores.D);
-
-            // Hide all badges first
             document.getElementById('badge-A').style.display = 'none';
             document.getElementById('badge-B').style.display = 'none';
             document.getElementById('badge-C').style.display = 'none';
@@ -742,7 +932,6 @@
                 if (scores.D === maxScore) document.getElementById('badge-D').style.display = 'inline-block';
             }
 
-            // 5. Show Results Section if requested
             if (showResults) {
                 const resultDiv = document.getElementById('nbi-results-container');
                 resultDiv.style.display = 'block';
@@ -760,21 +949,34 @@
             }
         }
 
-        function validateAndPrint() {
-            calculateScores(true); // Ensure dashboard is updated and visible
+        // --- Shared Validation Logic ---
+        function validateForm() {
             clearErrors();
-
             let isValid = true;
             let firstErrorElement = null;
 
+            // 1. Check Headers
             const name = document.getElementById('inpName');
             const dept = document.getElementById('inpDept');
             const date = document.getElementById('inpDate');
 
-            if (!name.value.trim()) { isValid = false; name.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = name; }
-            if (!dept.value.trim()) { isValid = false; dept.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = dept; }
-            if (!date.value) { isValid = false; date.classList.add('error-input'); if (!firstErrorElement) firstErrorElement = date; }
+            if (!name.value.trim()) {
+                isValid = false;
+                name.classList.add('error-input');
+                if (!firstErrorElement) firstErrorElement = name;
+            }
+            if (!dept.value.trim()) {
+                isValid = false;
+                dept.classList.add('error-input');
+                if (!firstErrorElement) firstErrorElement = dept;
+            }
+            if (!date.value) {
+                isValid = false;
+                date.classList.add('error-input');
+                if (!firstErrorElement) firstErrorElement = date;
+            }
 
+            // 2. Check All 20 Questions
             for (let i = 1; i <= 20; i++) {
                 const radios = document.getElementsByName('q' + i);
                 let rowChecked = false;
@@ -787,28 +989,53 @@
                 }
             }
 
-            if (isValid) {
-                window.print();
+            return { isValid, firstErrorElement };
+        }
+
+        // --- Button Handlers ---
+
+        function validateAndCalculate() {
+            const result = validateForm();
+            if (result.isValid) {
+                calculateScores(true);
+                showToast("Profile calculated successfully!", "success");
             } else {
-                alert('Please fill out all highlighted fields before printing.');
-                if (firstErrorElement) firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                showToast("Please complete all highlighted fields.", "error");
+                if (result.firstErrorElement) {
+                    result.firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }
+        }
+
+        function validateAndPrint() {
+            const result = validateForm();
+            if (result.isValid) {
+                calculateScores(true);
+                // Small delay to ensure styles apply before print dialog opens
+                setTimeout(() => window.print(), 100);
+            } else {
+                showToast("Please fill all fields before printing.", "error");
+                if (result.firstErrorElement) {
+                    result.firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
             }
         }
 
         function resetForm() {
-            if (confirm("Clear entire form?")) {
+            if (confirm("Are you sure you want to clear the entire form?")) {
                 document.getElementById('assessmentForm').reset();
                 document.getElementById('inpName').value = "";
                 document.getElementById('inpDept').value = "";
                 document.getElementById('inpDate').value = "";
                 document.getElementById('nbi-results-container').style.display = 'none';
                 document.getElementById('nbi-results-container').classList.remove('visible-print');
-                calculateScores(false); // Reset totals to 0
+                calculateScores(false);
                 clearErrors();
+                showToast("Form cleared.", "success");
             }
         }
 
-        // Auto-calc on change (does not auto-show results box)
+        // Auto-calc internal scores on change (does not auto-show results box)
         document.getElementById('assessmentForm').addEventListener('change', () => calculateScores(false));
     </script>
 
