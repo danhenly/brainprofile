@@ -1,0 +1,7 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#181C2A"/>
+  <circle cx="300" cy="315" r="180" fill="#4F8CFF" fill-opacity="0.15"/>
+  <circle cx="900" cy="315" r="180" fill="#4F8CFF" fill-opacity="0.15"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Segoe UI, Arial, sans-serif" font-size="90" font-weight="bold" fill="#4F8CFF" letter-spacing="2">BrainProfile</text>
+  <text x="50%" y="60%" text-anchor="middle" dominant-baseline="middle" font-family="Segoe UI, Arial, sans-serif" font-size="32" fill="#FFFFFF" opacity="0.7">Modern Brain Insights</text>
+</svg>

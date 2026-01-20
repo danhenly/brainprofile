@@ -1,0 +1,5 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="128" height="128" rx="32" fill="#181C2A"/>
+  <circle cx="64" cy="64" r="40" fill="#4F8CFF" fill-opacity="0.18"/>
+  <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="bold" fill="#4F8CFF">BP</text>
+</svg>
